@@ -520,6 +520,12 @@ cp_df <- cp_df %>%
 # the complexity outlook index for countries, and the complexity outlook gain
 # for country-product pairs
 
-# Final dataset -----------------------------------------------------------
+# Export final dataset ----------------------------------------------------
 dim(cp_df)
 head(cp_df)
+
+write.csv(
+  cp_df, 
+  file = "data/data_processed/cp_df.csv", 
+  row.names = FALSE
+)

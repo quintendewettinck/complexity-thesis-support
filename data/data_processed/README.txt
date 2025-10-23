@@ -1,1 +1,1 @@
-This directory contains the processed data
+Use this directory to store processed data.

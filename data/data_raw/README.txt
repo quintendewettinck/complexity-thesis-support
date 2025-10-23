@@ -1,1 +1,1 @@
-This directory contains the raw data
+Use this directory to store raw, unmodified data.
