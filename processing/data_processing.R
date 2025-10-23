@@ -150,7 +150,6 @@ cp_df <- cp_df %>%
 
 head(cp_df)
 
-
 # Sample selection --------------------------------------------------------
 # Select the sample of countries and products (remove small nodes)
 # Optionally, could download population data and filter out countries with
@@ -311,10 +310,9 @@ for (year in baci_year1:baci_yearT) {
   # Create the complexity measures object for the current year
   compl_object <- complexity_measures(
     get(paste0("cp_mat_", year)), 
-    method = "reflections"
-    # method = "eigenvalues" # for final analysis uncomment
-    # this takes an immense amount of time
-  ) # todo: change to method = "fitness"? 
+    # method = "reflections"
+    method = "eigenvalues"
+  ) 
   
   # Assign the object to the corresponding name (compl_2007, compl_2008, etc.)
   assign(paste0("compl_", year), compl_object)
@@ -516,6 +514,11 @@ cp_df <- cp_df %>%
   mutate(dens_cp = 1 - dist_cp) %>% 
   # Remove dist_cp to save memory
   select(-dist_cp)
+
+# Complexity Outlook ------------------------------------------------------
+# Try to use the economiccomplexity::complexity_outlook() function to compute
+# the complexity outlook index for countries, and the complexity outlook gain
+# for country-product pairs
 
 # Final dataset -----------------------------------------------------------
 dim(cp_df)
