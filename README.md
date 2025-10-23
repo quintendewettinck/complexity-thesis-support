@@ -9,7 +9,7 @@ Please refer to the document `thesis_instructions.pdf` on Toledo for general ins
 1. Download the raw data from the data sources specified below
 2. Specify the path to your raw data in `RAW_DATA_PATH` in the `data_processing.R` script
 3. Specify the `baci_version`, `HS_version` and `HS_digits`, as well as the years for which you have BACI data in the `data_processing.R` script
-4. Run the `data_processing.R` script, which will
+4. Run the `data_processing.R` script, which will: 
     a. Import the BACI trade data
     b. Aggregate the trade flows to the specified number of digits (`HS_digits`)
     c. Add the country ISO3 and product HS codes and descriptions
