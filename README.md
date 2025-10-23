@@ -10,11 +10,11 @@ Please refer to the document `thesis_instructions.pdf` on Toledo for general ins
 2. Specify the path to your raw data in `RAW_DATA_PATH` in the `data_processing.R` script
 3. Specify the `baci_version`, `HS_version` and `HS_digits`, as well as the years for which you have BACI data in the `data_processing.R` script
 4. Run the `data_processing.R` script, which will: 
-    a. Import the BACI trade data
-    b. Aggregate the trade flows to the specified number of digits (`HS_digits`)
-    c. Add the country ISO3 and product HS codes and descriptions
-    d. Filter the dataset on the selected country and product sample (removing small nodes)
-    e. Compute RCA_cp, M_cp, diversity_c, ubiquity_p, ECI_c, PCI_p, proximity_pp, and relatedness_cp (dens_cp)
+    1. Import the BACI trade data
+    2. Aggregate the trade flows to the specified number of digits (`HS_digits`)
+    3. Add the country ISO3 and product HS codes and descriptions
+    4. Filter the dataset on the selected country and product sample (removing small nodes)
+    5. Compute RCA_cp, M_cp, diversity_c, ubiquity_p, ECI_c, PCI_p, proximity_pp, and relatedness_cp (dens_cp)
 5. Create new script(s) for your analysis
     
 Note that the `data_processing.R` script serves as supporting material for the preprocessing of the data, and does not include the complete set of scripts used for the full analysis. 
