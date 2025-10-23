@@ -49,10 +49,9 @@ for (year in baci_year1:baci_yearT) {
     colClasses = list(character = "k"))  
     # Rename columns directly in data.table
     setnames(data, 
-             old = c("t", "i", "k", "v"
-             ), 
-             new = c("year", "exporter", "prod_code", "X_cp"
-             ))
+             old = c("t", "i", "k", "v"), 
+             new = c("year", "exporter", "prod_code", "X_cp")
+             )
     # Sum both X_cp and Q_cp over year, exporter, prod_code using data.table's 
     # fast aggregation
     data <- data[, .(

@@ -1,6 +1,6 @@
 # Complexity Thesis Support
 
-A repository with example code for master's thesis students performing complexity-relatedness analyses.
+A repository with example code for master's thesis students performing country-level complexity-relatedness analyses.
 
 Please refer to the document `thesis_instructions.pdf` on Toledo for general instructions.
 
@@ -15,6 +15,7 @@ Please refer to the document `thesis_instructions.pdf` on Toledo for general ins
     3. Add the country ISO3 and product HS codes and descriptions
     4. Filter the dataset on the selected country and product sample (removing small nodes)
     5. Compute RCA_cp, M_cp, diversity_c, ubiquity_p, ECI_c, PCI_p, proximity_pp, and relatedness_cp (dens_cp)
+    6. Export the country-product-year level dataset to `cp_df.csv`
 5. Create new script(s) for your analysis
     
 Note that the `data_processing.R` script serves as supporting material for the preprocessing of the data, and does not include all code required for the full analysis. 
