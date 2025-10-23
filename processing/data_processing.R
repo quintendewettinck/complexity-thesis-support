@@ -8,6 +8,7 @@ library(dplyr)
 library(data.table)
 library(glue)
 library(readr)
+library(readxl)
 library(economiccomplexity)
 
 # Config ------------------------------------------------------------------
@@ -71,7 +72,7 @@ dim(baci_df)
 # Aggregate to HS_digits --------------------------------------------------
 # Aggregate the X_cp trade-flows to the right nr of digits
 # If HS_digits == 4, then aggregate them
-HS_digits 
+HS_digits
 
 if (HS_digits == 4) {
   baci_df <- baci_df %>% 
@@ -106,19 +107,124 @@ baci_df <- baci_df %>%
   # to avoid duplicate columns
   left_join(country_codes_baci %>% select(country_code, country_iso3),
             by = c("exporter" = "country_code")) %>% 
-  relocate(country_iso3, .after = exporter)
+  # Reorder columns
+  relocate(country_iso3, .after = exporter) %>% 
+  # Remove the exporter code
+  select(-exporter)
 
 head(baci_df)
 
 # Create cp_df ------------------------------------------------------------
 # cp_df is the final country-product-year level dataset
-cp_df <- baci_df %>% 
-  # Rename variables
-  rename(country_code = exporter)
+cp_df <- baci_df
+
+# Add product descriptions ------------------------------------------------
+# The HS codes in the BACI data are at 6-digits. To add the correct 4-digit
+# product codes, we use the UN product codes file which contains the product
+# descriptions for all levels
+
+## Import UN HS codes ####
+UN_HS_codes <- read_excel(
+  paste0(
+    RAW_DATA_PATH, 
+    "/UN HSCodeandDescription/HSCodeandDescription.xlsx"
+  ),
+  sheet = HS_version
+)
+
+# Select the descriptions for the digits chosen
+product_codes_UN <- UN_HS_codes %>% 
+  # keep only rows with the correct digits (6 or 4)
+  filter(as.integer(Level) == HS_digits) %>%   
+  mutate(
+    code = Code, 
+    description = Description, 
+    .keep = "none" # keep only these variables
+  )
+
+# Add these descriptions to cp_df
+cp_df <- cp_df %>% 
+  left_join(product_codes_UN, by = c("prod_code" = "code")) %>% 
+  rename(prod_descr = description) %>% 
+  relocate(prod_descr, .after = prod_code)
+
+head(cp_df)
+
+
+# Sample selection --------------------------------------------------------
+# Select the sample of countries and products (remove small nodes)
+# Optionally, could download population data and filter out countries with
+# population sizes smaller than 1000000
+tot_exp_c_threshold <- 1000000 # 1 billion USD
+tot_exp_p_threshold <- 500000 # 500 million USD
+sample_selection_year <- 2022
+
+## Country sample ####
+# Select countries with total exports
+country_sample <- baci_df %>%
+  group_by(country_iso3, year) %>%
+  summarise(tot_exp_c = sum(X_cp, na.rm = TRUE), .groups = "drop") %>%
+  filter(
+    year == sample_selection_year,
+    
+    # Total exports threshold
+    tot_exp_c >= tot_exp_c_threshold,
+    
+    # Manually excluded countries with unreliable data as done in Jun.etal2020, 
+    # Pinheiro.etal2022, ...
+    !country_iso3 %in% c(
+      "IRQ", 
+      "TCD", 
+      "MAC", 
+      "AFG"
+    )
+  ) %>%
+  
+  # Extract the remaining country codes
+  pull(country_iso3)
+
+country_sample
+length(country_sample) # number of selected countries
+
+## Product sample ####
+product_sample <- baci_df %>%
+  # Keep only rows for selected countries
+  filter(country_iso3 %in% country_sample) %>%
+  
+  # Compute total exports per product-year (aggregated across countries)
+  group_by(year, prod_code) %>%
+  mutate(tot_exp_p = sum(X_cp, na.rm = TRUE)) %>%
+  ungroup() %>%
+  
+  # Drop country info and collapse to product-year level
+  select(-country_iso3) %>%
+  group_by(year, prod_code) %>%
+  summarise(across(everything(), first), .groups = "drop") %>%
+  
+  # Add product description from product code mapping
+  left_join(product_codes_baci, by = c("prod_code" = "code")) %>%
+  rename(prod_descr = description) %>%
+  
+  # Filter out the small products
+  filter(year == sample_selection_year, 
+         tot_exp_p >= tot_exp_p_threshold) %>% 
+  
+  # Extract the product codes 
+  pull(prod_code)
+
+head(product_sample)
+length(product_sample) # number of selected products
+
+## Filter out countries and products
+dim(cp_df)
+
+cp_df <- cp_df %>% 
+  filter(country_iso3 %in% country_sample, 
+         prod_code %in% product_sample)
+
+dim(cp_df)
 
 # Compute RCA_cp, s_cp, M_cp ----------------------------------------------
-
-
 cp_df <- cp_df %>% 
   ## Total exports c ####
   # tot_exp_c = Total exports of c = sum_{p'} X_{cp'}
@@ -138,7 +244,7 @@ cp_df <- cp_df %>%
   mutate(tot_world_exp = sum(X_cp, na.rm = TRUE)) %>% 
   ungroup() %>% 
   
-  ## RCA ####
+  ## RCA_cp ####
   # RCA_{cp} = (X_{cp} / sum_{p'} X_{cp'}) / (sum_{c} X_{c'p} / 
     # sum_{c'p'} X_{c'p'})
   mutate(RCA_cp = (X_cp / tot_exp_c) / (tot_exp_p / tot_world_exp)) %>% 
@@ -174,10 +280,7 @@ for (year in baci_year1:baci_yearT) {
   assign(paste0("cp_df_", year), cp_df %>% filter(year == !!year))
 }
 
-# head(cp_df_2022)
-
-# year1 <- min(baci_df$year) 
-# yearT <- max(baci_df$year)
+head(cp_df_2022)
 
 ## Create a list to store the cp-matrices for each year
 cp_mat_list <- list()
@@ -197,7 +300,6 @@ for (year in baci_year1:baci_yearT) {
   # Add the matrix to the list
   cp_mat_list[[year - (baci_year1 - 1)]] <- cp_mat
 } 
-# TODO: optimise this for efficiency! 
 
 ## Check values
 # cp_mat_2017[1:8, 1:8]
@@ -205,10 +307,6 @@ for (year in baci_year1:baci_yearT) {
 # cp_mat_2022[1:8, 1:8]
 
 ## Compute ECI & PCI ####
-# complexity_measures
-# economiccomplexity:::reflections_method
-# loop over every year
-
 for (year in baci_year1:baci_yearT) {
   # Create the complexity measures object for the current year
   compl_object <- complexity_measures(
@@ -226,8 +324,9 @@ head(compl_2022$complexity_index_country)
 head(compl_2022$complexity_index_product)
 
 ## Create eci_df ####
-# df containing all the ECI values for all years
-#### Initialize an empty data frame
+# A data frame containing all the ECI values for all years
+
+# Initialize an empty data frame
 eci_df <- data.frame(year = numeric(0), 
                      country_iso3 = character(0), 
                      eci_c = numeric(0))
@@ -236,6 +335,7 @@ head(eci_df)
 ### Loop over all compl_YEAR objects and combine their values into one df
 for (year in baci_year1:baci_yearT) {
   compl_object <- get(paste("compl_", year, sep = ""))
+  
   year_data <- data.frame(
     year = year,
     country_iso3 = names(compl_object$complexity_index_country),
@@ -251,9 +351,6 @@ for (year in baci_year1:baci_yearT) {
 head(eci_df)
 
 ### Add ECI to cp_df and c_df ####
-head(eci_df)
-
-head(cp_df)
 cp_df <- cp_df %>% 
   left_join(eci_df, by = c("year", "country_iso3"))
 head(cp_df)
@@ -262,6 +359,9 @@ head(cp_df)
 rm(eci_df)
 
 ## Create pci_df ####
+# A data frame containing all the PCI values for all years
+
+# Initialize an empty data frame
 pci_df <- data.frame(year = numeric(0), 
                      prod_code = character(0), 
                      pci_p = numeric(0))
@@ -270,6 +370,7 @@ head(pci_df)
 ### Loop over all compl_YEAR objects and combine their PCI values into one df
 for (year in baci_year1:baci_yearT) {
   compl_object <- get(paste("compl_", year, sep = ""))
+  
   year_data <- data.frame(
     year = year,
     prod_code = names(compl_object$complexity_index_product),
@@ -292,10 +393,8 @@ head(cp_df)
 # Remove the object
 rm(pci_df)
 
-
 # Relatedness -------------------------------------------------------------
 # Compute relatedness metrics: proximities_pp' and densities_cp
-
 
 ## Proximity_pp' ----------------------------------------------------------
 # Compute proximities using economiccomplexity::proximity for multiple years
@@ -323,7 +422,7 @@ for(year in prox_year1:prox_yearT) {
   
   # Remove the temporary proximity_current variable to free up memory
   rm(cp_mat_current, proximity_current)
-} # bladwijzer
+} 
 
 # Check objects that are created
 grep(pattern = "prox_\\d{4}", ls(), value = TRUE)
@@ -417,3 +516,7 @@ cp_df <- cp_df %>%
   mutate(dens_cp = 1 - dist_cp) %>% 
   # Remove dist_cp to save memory
   select(-dist_cp)
+
+# Final dataset -----------------------------------------------------------
+dim(cp_df)
+head(cp_df)

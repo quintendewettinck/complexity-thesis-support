@@ -53,3 +53,6 @@ rsconnect/
 
 # Data directory
 data
+
+# README html files
+README.html
