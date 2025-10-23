@@ -116,6 +116,54 @@ cp_df <- baci_df %>%
   # Rename variables
   rename(country_code = exporter)
 
+# Compute RCA_cp, s_cp, M_cp ----------------------------------------------
+
+
+cp_df <- cp_df %>% 
+  ## Total exports c ####
+  # tot_exp_c = Total exports of c = sum_{p'} X_{cp'}
+  group_by(year, country_iso3) %>% 
+  mutate(tot_exp_c = sum(X_cp, na.rm = TRUE)) %>% 
+  ungroup() %>%
+  
+  ## Total exports p ####
+  # tot_exp_p = World export of p (by all c) = sum_{c} X_{c'p}
+  group_by(year, prod_code) %>% 
+  mutate(tot_exp_p = sum(X_cp, na.rm = TRUE)) %>% 
+  ungroup() %>% 
+  
+  ## Total world exports
+  # tot_world_exp = Total world export of all products = sum_{c'p'}X_{c'p'}
+  group_by(year) %>% 
+  mutate(tot_world_exp = sum(X_cp, na.rm = TRUE)) %>% 
+  ungroup() %>% 
+  
+  ## RCA ####
+  # RCA_{cp} = (X_{cp} / sum_{p'} X_{cp'}) / (sum_{c} X_{c'p} / 
+    # sum_{c'p'} X_{c'p'})
+  mutate(RCA_cp = (X_cp / tot_exp_c) / (tot_exp_p / tot_world_exp)) %>% 
+  
+  ## s_cp (Export shares) ####
+  # s_cp = X_cp / sum_(p') X_(cp') = X_cp / tot_exp_c
+  mutate(s_cp = X_cp / tot_exp_c) %>% 
+  
+  ## M_cp ####
+  # M_cp = 1 if RCA_cp >= 1, = 0 if RCA_cp < 1
+  mutate(M_cp = if_else(RCA_cp >= 1, 1, 0)) %>% 
+
+  ## Diversity_c ####
+  # diversity_c = sum_p M_cp = the number of RCAs >= 1 a country has
+  group_by(year, country_iso3) %>% 
+  mutate(diversity_c = sum(M_cp, na.rm = TRUE)) %>% 
+  ungroup() %>% 
+
+  ## Ubiquity_p ####
+  # ubiquity_p = sum_c M_cp = the number of times p has been exported with an 
+  # RCA >= 1
+  group_by(year, prod_code) %>% 
+  mutate(ubiquity_p = sum(M_cp, na.rm = TRUE)) %>% 
+  ungroup()
+
 # ECI & PCI ---------------------------------------------------------------
 # Compute ECI & PCI separately for each year
 
@@ -245,3 +293,127 @@ head(cp_df)
 rm(pci_df)
 
 
+# Relatedness -------------------------------------------------------------
+# Compute relatedness metrics: proximities_pp' and densities_cp
+
+
+## Proximity_pp' ----------------------------------------------------------
+# Compute proximities using economiccomplexity::proximity for multiple years
+prox_year1 <- baci_year1
+prox_yearT <- baci_yearT
+prox_years <- prox_year1:prox_yearT
+
+### Loop through each year (over each cp_mat_yyyy object) and compute 
+# proximities
+for(year in prox_year1:prox_yearT) {
+  # Construct the matrix name for the current year
+  cp_mat_name <- paste("cp_mat", year, sep = "_")
+  
+  # Use get() to retrieve the matrix by name
+  cp_mat_current <- get(cp_mat_name)
+  
+  # Calculate proximity for the current matrix
+  proximity_current <- economiccomplexity::proximity(cp_mat_current)
+  
+  # Construct the name for the proximity result, now using 'prox_' as prefix
+  proximity_name <- paste("prox", year, sep = "_")
+  
+  # Use assign() to create a new variable with the calculated proximity
+  assign(proximity_name, proximity_current)
+  
+  # Remove the temporary proximity_current variable to free up memory
+  rm(cp_mat_current, proximity_current)
+} # bladwijzer
+
+# Check objects that are created
+grep(pattern = "prox_\\d{4}", ls(), value = TRUE)
+
+prox_2022$proximity_country[1:5, 1:5]
+
+## Distance_cp ------------------------------------------------------------
+# Compute distances_cp between countries and products 
+
+### Loop through each year and compute distances
+for(year in prox_year1:prox_yearT) {
+  # Construct the prox_yyyy variable name
+  prox_var_name <- paste0("prox_", year)
+  
+  # Construct the cp_mat_yyyy variable name
+  cp_mat_var_name <- paste0("cp_mat_", year)
+  
+  # Use get() to retrieve the prox_yyyy object based on its name
+  prox_object <- get(prox_var_name)
+  
+  # Similarly, retrieve the cp_mat_yyyy object
+  cp_mat_object <- get(cp_mat_var_name)
+  
+  # Calculate the distance using the economiccomplexity::distance function
+  dist_object <- economiccomplexity::distance(cp_mat_object, 
+                                              prox_object$proximity_product)
+  
+  # Construct the dist_yyyy variable name
+  dist_var_name <- paste0("dist_", year)
+  
+  # Use assign() to create a new variable with the name stored in dist_var_name 
+  # and assign the calculated dist_object to it
+  assign(dist_var_name, dist_object)
+}
+
+# Check the distance matrices that were created
+grep(pattern = "dist_\\d{4}", ls(), value = TRUE)
+
+dist_2022[1:5, 1:5]
+
+# Remove the prox_yyyy matrices to save memory
+rm(list = grep("prox_\\d{4}", ls(), value = TRUE))
+
+## Combine distances into a data frame
+### Initialize an empty data frame for storing all dist_yyyy data
+dist_df <- data.frame()
+
+### Loop through each dist matrix name, convert to long format, and combine
+for (matrix_name in grep("dist_\\d{4}", ls(), value = TRUE)) {
+  # Extract the year from the matrix name
+  year <- gsub("dist_", "", matrix_name)
+  
+  # Retrieve the matrix from the name
+  matrix <- get(matrix_name)
+  
+  # Convert the matrix to a data frame in long format
+  temp_df <- as.data.frame(as.table(as.matrix(matrix)))
+  
+  # Rename columns for clarity
+  colnames(temp_df) <- c("country_iso3", "prod_code", "dist_cp")
+  
+  # Add the year column
+  temp_df$year <- year
+  
+  # Combine with the main data frame
+  dist_df <- bind_rows(dist_df, temp_df)
+}
+
+rm(temp_df)
+
+### Convert the year to numeric and reorder columns
+dist_df <- dist_df %>%
+  mutate(year = as.numeric(year)) %>%
+  select(country_iso3, prod_code, year, everything()) 
+
+head(dist_df) 
+
+### Merge dist_df with cp_df
+cp_df <- left_join(cp_df, dist_df, 
+                   by = c("year", "country_iso3", "prod_code"))
+head(cp_df)
+dim(cp_df) 
+
+# Remove dist_df to save memory
+rm(dist_df)
+
+## Density_cp -------------------------------------------------------------
+# Relatedness density = 1 - distance = "closeness"
+cp_df <- cp_df %>% 
+  # Compute relatedness density (dens_cp)
+  mutate(dens_cp = 1 - dist_cp) %>% 
+  # Remove dist_cp to save memory
+  select(-dist_cp)
