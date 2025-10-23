@@ -17,7 +17,7 @@ Please refer to the document `thesis_instructions.pdf` on Toledo for general ins
     5. Compute RCA_cp, M_cp, diversity_c, ubiquity_p, ECI_c, PCI_p, proximity_pp, and relatedness_cp (dens_cp)
 5. Create new script(s) for your analysis
     
-Note that the `data_processing.R` script serves as supporting material for the preprocessing of the data, and does not include the complete set of scripts used for the full analysis. 
+Note that the `data_processing.R` script serves as supporting material for the preprocessing of the data, and does not include all code required for the full analysis. 
 
 ## Data Sources
 
