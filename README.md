@@ -1,4 +1,4 @@
-# complexity-thesis-support
+# Complexity Thesis Support
 
 A repository with example code for master's thesis students performing complexity-relatedness analyses.
 
