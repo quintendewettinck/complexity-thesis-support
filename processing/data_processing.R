@@ -7,6 +7,8 @@ rm(list=ls())
 library(dplyr)
 library(data.table)
 library(glue)
+library(readr)
+library(economiccomplexity)
 
 # Config ------------------------------------------------------------------
 # Set the raw data path
@@ -20,7 +22,6 @@ HS_digits <- 4
 # Choose years
 baci_year1 <- 2022
 baci_yearT <- 2023
-
 
 # Import BACI data --------------------------------------------------------
 # Select the correct path where the BACI data is stored
@@ -98,3 +99,149 @@ product_codes_baci <- read_csv(glue(
   RAW_DATA_PATH, 
   "/CEPII BACI/BACI_{HS_version}_{baci_version}/product_codes_{HS_version}_{baci_version}.csv")
 )
+
+# Add ISO3 codes to baci_df -----------------------------------------------
+baci_df <- baci_df %>% 
+  select(-any_of("country_iso3")) %>%  # Remove the existing column if present 
+  # to avoid duplicate columns
+  left_join(country_codes_baci %>% select(country_code, country_iso3),
+            by = c("exporter" = "country_code")) %>% 
+  relocate(country_iso3, .after = exporter)
+
+head(baci_df)
+
+# Create cp_df ------------------------------------------------------------
+# cp_df is the final country-product-year level dataset
+cp_df <- baci_df %>% 
+  # Rename variables
+  rename(country_code = exporter)
+
+# ECI & PCI ---------------------------------------------------------------
+# Compute ECI & PCI separately for each year
+
+## Subset cp_df for each year ####
+baci_year1:baci_yearT # created in baci_import.R
+
+for (year in baci_year1:baci_yearT) {
+  assign(paste0("cp_df_", year), cp_df %>% filter(year == !!year))
+}
+
+# head(cp_df_2022)
+
+# year1 <- min(baci_df$year) 
+# yearT <- max(baci_df$year)
+
+## Create a list to store the cp-matrices for each year
+cp_mat_list <- list()
+
+## Loop through each year and create the matrices ####
+for (year in baci_year1:baci_yearT) {
+  # Create the matrix for the current year using the corresponding cp_df
+  cp_mat <- get(paste0("cp_df_", year)) %>%
+    balassa_index(country = "country_iso3", 
+                  product = "prod_code",
+                  value = "X_cp", 
+                  cutoff = 1, discrete = TRUE)
+  
+  # Assign the matrix to the corresponding name
+  assign(paste0("cp_mat_", year), cp_mat)
+  
+  # Add the matrix to the list
+  cp_mat_list[[year - (baci_year1 - 1)]] <- cp_mat
+} 
+# TODO: optimise this for efficiency! 
+
+## Check values
+# cp_mat_2017[1:8, 1:8]
+# cp_mat_2018[1:8, 1:8]
+# cp_mat_2022[1:8, 1:8]
+
+## Compute ECI & PCI ####
+# complexity_measures
+# economiccomplexity:::reflections_method
+# loop over every year
+
+for (year in baci_year1:baci_yearT) {
+  # Create the complexity measures object for the current year
+  compl_object <- complexity_measures(
+    get(paste0("cp_mat_", year)), 
+    method = "reflections"
+    # method = "eigenvalues" # for final analysis uncomment
+    # this takes an immense amount of time
+  ) # todo: change to method = "fitness"? 
+  
+  # Assign the object to the corresponding name (compl_2007, compl_2008, etc.)
+  assign(paste0("compl_", year), compl_object)
+}
+
+head(compl_2022$complexity_index_country)
+head(compl_2022$complexity_index_product)
+
+## Create eci_df ####
+# df containing all the ECI values for all years
+#### Initialize an empty data frame
+eci_df <- data.frame(year = numeric(0), 
+                     country_iso3 = character(0), 
+                     eci_c = numeric(0))
+head(eci_df)
+
+### Loop over all compl_YEAR objects and combine their values into one df
+for (year in baci_year1:baci_yearT) {
+  compl_object <- get(paste("compl_", year, sep = ""))
+  year_data <- data.frame(
+    year = year,
+    country_iso3 = names(compl_object$complexity_index_country),
+    eci_c = compl_object$complexity_index_country
+  )
+  
+  eci_df <- rbind(eci_df, year_data)
+  
+  # Remove the row names
+  row.names(eci_df) = NULL
+}
+
+head(eci_df)
+
+### Add ECI to cp_df and c_df ####
+head(eci_df)
+
+head(cp_df)
+cp_df <- cp_df %>% 
+  left_join(eci_df, by = c("year", "country_iso3"))
+head(cp_df)
+
+# Remove the object
+rm(eci_df)
+
+## Create pci_df ####
+pci_df <- data.frame(year = numeric(0), 
+                     prod_code = character(0), 
+                     pci_p = numeric(0))
+head(pci_df)
+
+### Loop over all compl_YEAR objects and combine their PCI values into one df
+for (year in baci_year1:baci_yearT) {
+  compl_object <- get(paste("compl_", year, sep = ""))
+  year_data <- data.frame(
+    year = year,
+    prod_code = names(compl_object$complexity_index_product),
+    pci_p = compl_object$complexity_index_product
+  )
+  
+  pci_df <- rbind(pci_df, year_data)
+  
+  # Remove the row names
+  row.names(pci_df) = NULL
+}
+
+head(pci_df)
+
+### Add PCI to cp_df and p_df ####
+cp_df <- cp_df %>% 
+  left_join(pci_df, by = c("year", "prod_code"))
+head(cp_df)
+
+# Remove the object
+rm(pci_df)
+
+
