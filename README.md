@@ -43,11 +43,27 @@ Note that the `data_processing.R` script serves as supporting material for the p
 
 ## Citation
 
+Please cite this repository as 
+
+De Wettinck, Q. (2025). Complexity Thesis Support [Computer software]. https://github.com/quintendewettinck/complexity-thesis-support
+
+`BibTeX`:
+```bibtex
+@software{De_Wettinck_Complexity_Thesis_Support_2025,
+  author = {De Wettinck, Quinten},
+  license = {MIT},
+  month = oct,
+  title = {{Complexity Thesis Support}},
+  url = {https://github.com/quintendewettinck/complexity-thesis-support},
+  year = {2025}
+}
+```
+
 For more details on the calculation and interpretation of the metrics, see
 
 De Wettinck, Q., De Bruyne, K., & Bam, W. (2025). *Economic Complexity: Promise and Potential for Sustainable Development Decision Support* (SSRN Scholarly Paper No. 5412234). Social Science Research Network. https://doi.org/10.2139/ssrn.5412234
 
-`BibTeX`: 
+`BibTeX`:
 ```bibtex
 @misc{DeWettinck.etal2025,
   type = {{{SSRN Scholarly Paper}}},
