@@ -35,7 +35,6 @@ Note that the `data_processing.R` script serves as supporting material for the p
 ├── data
 │   ├── data_processed
 │   └── data_raw
-├── LICENSE
 ├── processing
 │   └── data_processing.R
 └── README.md
