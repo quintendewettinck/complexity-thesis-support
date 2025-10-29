@@ -11,7 +11,7 @@ Please refer to the document `thesis_instructions.pdf` on Toledo for general ins
 3. Specify the `baci_version`, `HS_version` and `HS_digits`, as well as the years for which you have BACI data in the `data_processing.R` script
 4. Run the `data_processing.R` script, which will: 
     1. Import the BACI trade data
-    2. Aggregate the trade flows to the specified number of digits (`HS_digits`)
+    2. Aggregate the trade flows to the specified number of digits (`HS_digits`); recommended number of digits is 4
     3. Add the country ISO3 and product HS codes and descriptions
     4. Filter the dataset on the selected country and product sample (removing small nodes)
     5. Compute RCA_cp, M_cp, diversity_c, ubiquity_p, ECI_c, PCI_p, proximity_pp, and relatedness_cp (dens_cp)
@@ -22,7 +22,7 @@ Note that the `data_processing.R` script serves as supporting material for the p
 
 ## Data Sources
 
-- CEPII BACI international trade data (https://www.cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37)
+- CEPII BACI international trade data (HS07, 2007-2023)(https://www.cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37)
 - UN HS product descriptions (https://unstats.un.org/unsd/classifications/Econ)
   - Download "All HS codes and descriptions" xlsx file for product descriptions for all HS digits
 
