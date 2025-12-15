@@ -308,7 +308,7 @@ for (year in baci_year1:baci_yearT) {
 for (year in baci_year1:baci_yearT) {
   # Create the complexity measures object for the current year
   compl_object <- complexity_measures(
-    get(paste0("cp_mat_", year)), 
+    balassa_index = get(paste0("cp_mat_", year)), 
     # method = "reflections"
     method = "eigenvalues"
   ) 
@@ -460,9 +460,6 @@ grep(pattern = "dist_\\d{4}", ls(), value = TRUE)
 
 dist_2022[1:5, 1:5]
 
-# Remove the prox_yyyy matrices to save memory
-rm(list = grep("prox_\\d{4}", ls(), value = TRUE))
-
 ## Combine distances into a data frame
 ### Initialize an empty data frame for storing all dist_yyyy data
 dist_df <- data.frame()
@@ -515,9 +512,66 @@ cp_df <- cp_df %>%
   select(-dist_cp)
 
 # Complexity Outlook ------------------------------------------------------
-# Try to use the economiccomplexity::complexity_outlook() function to compute
-# the complexity outlook index for countries, and the complexity outlook gain
-# for country-product pairs
+# Initialise empty dataframes
+coi_df <- data.frame()
+cog_df <- data.frame()
+
+# Compute the Complexity Outlook Index (coi_c) for each country and the 
+# Complexity Outlook Gain (cog_cp) for each country-product
+for (year in baci_year1:baci_yearT) {
+  
+  # Create the complexity outlook list object
+  co_list <- economiccomplexity::complexity_outlook(
+    balassa_index = get(paste0("cp_mat_", year)),
+    proximity_product = get(paste0("prox_", year))$proximity_product,
+    complexity_index_product = get(paste0("compl_", 
+                                          year))$complexity_index_product
+  )
+  
+  # Compute Complexity Outlook index (coi_c)
+  coi_df <- bind_rows(
+    coi_df,
+    data.frame(
+      year = year,
+      country_iso3 = names(co_list$complexity_outlook_index),
+      coi_c = as.numeric(co_list$complexity_outlook_index),
+      row.names = NULL
+    )
+  )
+  
+  # Compute Complexity Outlook Gain (cog_cp)
+  cog_df <- bind_rows(
+    cog_df,
+    transform(
+      as.data.frame(as.table(co_list$complexity_outlook_gain)),
+      year = year
+    ) %>% 
+      rename(
+        country_iso3 = Var1,
+        prod_code    = Var2,
+        cog_cp       = Freq
+      ) %>% 
+      # Reorder columns 
+      select(year, country_iso3, prod_code, everything())
+  )
+}
+
+head(coi_df)
+head(cog_df)
+
+# Add coi_c and cog_cp to cp_df
+cp_df <- cp_df %>%
+  left_join(
+    coi_df,
+    by = c("year", "country_iso3")
+  ) %>%
+  left_join(
+    cog_df,
+    by = c("year", "country_iso3", "prod_code")
+  )
+
+# Remove the prox_yyyy matrices to save memory
+rm(list = grep("prox_\\d{4}", ls(), value = TRUE))
 
 # Export final dataset ----------------------------------------------------
 dim(cp_df)
