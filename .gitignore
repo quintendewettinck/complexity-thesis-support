@@ -56,3 +56,6 @@ data
 
 # README html files
 README.html
+
+# File to clear the environment
+clear_env.R
