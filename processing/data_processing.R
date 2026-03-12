@@ -10,10 +10,11 @@ library(glue)
 library(readr)
 library(readxl)
 library(economiccomplexity)
+library(here)
 
 # Config ------------------------------------------------------------------
 # Set the raw data path
-RAW_DATA_PATH <- "data/data_raw"
+RAW_DATA_PATH <- here("data/data_raw")
 
 # Choose BACI and HS version, and number of digits
 baci_version <- "V202501"
@@ -26,8 +27,8 @@ baci_yearT <- 2023
 
 # Import BACI data --------------------------------------------------------
 # Select the correct path where the BACI data is stored
-baci_data_path <- paste0(
-  RAW_DATA_PATH, "/CEPII BACI/BACI_", HS_version, "_", baci_version
+baci_data_path <- here(
+  RAW_DATA_PATH, "CEPII BACI", paste0("BACI_", HS_version, "_", baci_version)
 )
 
 # Initialise baci_df, a data frame at the cpt-level containing the baci for 
@@ -90,15 +91,15 @@ if (HS_digits == 4) {
 }
 
 # Import country and product codes ----------------------------------------
-country_codes_baci <- read_csv(glue(
+country_codes_baci <- read_csv(here(glue(
   RAW_DATA_PATH, 
-  "/CEPII BACI/BACI_{HS_version}_{baci_version}/country_codes_{baci_version}.csv")
-)
+  "/CEPII BACI/BACI_{HS_version}_{baci_version}/country_codes_{baci_version}.csv"
+)))
 
-product_codes_baci <- read_csv(glue(
+product_codes_baci <- read_csv(here(glue(
   RAW_DATA_PATH, 
-  "/CEPII BACI/BACI_{HS_version}_{baci_version}/product_codes_{HS_version}_{baci_version}.csv")
-)
+  "/CEPII BACI/BACI_{HS_version}_{baci_version}/product_codes_{HS_version}_{baci_version}.csv"
+)))
 
 # Add ISO3 codes to baci_df -----------------------------------------------
 baci_df <- baci_df %>% 
@@ -124,9 +125,9 @@ cp_df <- baci_df
 
 ## Import UN HS codes ####
 UN_HS_codes <- read_excel(
-  paste0(
+  here(
     RAW_DATA_PATH, 
-    "/UN HSCodeandDescription/HSCodeandDescription.xlsx"
+    "UN HSCodeandDescription/HSCodeandDescription.xlsx"
   ),
   sheet = HS_version
 )
