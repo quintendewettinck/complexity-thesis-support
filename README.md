@@ -44,7 +44,7 @@ Note that the `data_processing.R` script serves as supporting material for the p
 
 Please cite this repository as 
 
-De Wettinck, Q. (2025). Complexity Thesis Support [Computer software]. https://github.com/quintendewettinck/complexity-thesis-support
+De Wettinck, Q. (2025). Complexity Thesis Support [Source code]. https://github.com/quintendewettinck/complexity-thesis-support
 
 `BibTeX`:
 ```bibtex
