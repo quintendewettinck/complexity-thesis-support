@@ -17,13 +17,13 @@ library(here)
 RAW_DATA_PATH <- here("data/raw")
 
 # Choose BACI and HS version, and number of digits
-baci_version <- "V202501"
-HS_version <- "HS22"
+baci_version <- "V202601"
+HS_version <- "HS07"
 HS_digits <- 4
 
 # Choose years
-baci_year1 <- 2022
-baci_yearT <- 2023
+baci_year1 <- 2020 # update based on your analysis
+baci_yearT <- 2024
 
 # Import BACI data --------------------------------------------------------
 # Select the correct path where the BACI data is stored
