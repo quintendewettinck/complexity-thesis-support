@@ -310,7 +310,6 @@ for (year in baci_year1:baci_yearT) {
   # Create the complexity measures object for the current year
   compl_object <- complexity_measures(
     balassa_index = get(paste0("cp_mat_", year)), 
-    # method = "reflections"
     method = "eigenvalues"
   ) 
   
