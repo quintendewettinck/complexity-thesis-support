@@ -2,6 +2,11 @@
 
 # Clear the environment ---------------------------------------------------
 rm(list=ls())
+start_time <- Sys.time() # start runtime
+message(sprintf(
+  "data_processing.R started [%s].",
+  format(start_time, "%Y-%m-%d %H:%M:%S")
+))
 
 # Packages ----------------------------------------------------------------
 library(dplyr)
@@ -22,8 +27,23 @@ HS_version <- "HS07"
 HS_digits <- 4
 
 # Choose years
-baci_year1 <- 2020 # update based on your analysis
+baci_year1 <- 2022 # update based on your analysis
 baci_yearT <- 2024
+
+message(sprintf(
+  paste0(
+    "Selected configuration:\n",
+    "  BACI version: %s\n",
+    "  HS version: %s\n",
+    "  HS digits: %d\n",
+    "  Years: %d–%d"
+  ),
+  baci_version,
+  HS_version,
+  HS_digits,
+  baci_year1,
+  baci_yearT
+))
 
 # Import BACI data --------------------------------------------------------
 # Select the correct path where the BACI data is stored
@@ -36,6 +56,7 @@ baci_data_path <- here(
 baci_df <- data.table()
 
 ## Loop over all csv files and sum over c' (sum over importers)
+message("Importing and unilateralising BACI data...")
 for (year in baci_year1:baci_yearT) {
   # Construct the full file path dynamically
   file_path <- paste0(baci_data_path, "/BACI_", HS_version, "_Y", year, "_", 
@@ -44,7 +65,10 @@ for (year in baci_year1:baci_yearT) {
   if (file.exists(file_path)) {
     # Import CSV file using fread and select only required columns
     data <- fread(file_path, select = c(
-      "t", "i", "k", "v"
+      "t", # year 
+      "i", # exporter
+      "k", # product
+      "v"  # export value
     ), 
     # Ensure "k" (products) is read as character
     colClasses = list(character = "k"))  
@@ -65,6 +89,7 @@ for (year in baci_year1:baci_yearT) {
     warning(paste("File not found:", file_path))
   }
 }
+message("✓ BACI data imported and aggretated to country-product-year level.")
 
 head(baci_df)
 dim(baci_df)
@@ -75,6 +100,7 @@ dim(baci_df)
 HS_digits
 
 if (HS_digits == 4) {
+  message(glue("Aggregating exports to {HS_digits} digits..."))
   baci_df <- baci_df %>% 
     # truncate HS product codes to 4-digit level
     mutate(prod_code = substr(prod_code, 1, HS_digits)) %>% 
@@ -83,7 +109,7 @@ if (HS_digits == 4) {
       X_cp = sum(X_cp, na.rm = TRUE), 
       .groups = "drop"
     )
-  message("X_cp aggregated to ", HS_digits, "-digit level")
+  message("✓ X_cp aggregated to ", HS_digits, "-digit level")
 } else {
   # If HS_digits is 6, then baci_df remains unchanged
   message("HS_digits = ", HS_digits, 
@@ -218,12 +244,15 @@ length(product_sample) # number of selected products
 dim(cp_df)
 
 cp_df <- cp_df %>% 
-  filter(country_iso3 %in% country_sample, 
-         prod_code %in% product_sample)
+  filter(
+    country_iso3 %in% country_sample, 
+    prod_code %in% product_sample
+  )
 
 dim(cp_df)
 
 # Compute RCA_cp, s_cp, M_cp ----------------------------------------------
+message("Computing trade metrics...")
 cp_df <- cp_df %>% 
   ## Total exports c ####
   # tot_exp_c = Total exports of c = sum_{p'} X_{cp'}
@@ -269,6 +298,8 @@ cp_df <- cp_df %>%
   mutate(ubiquity_p = sum(M_cp, na.rm = TRUE)) %>% 
   ungroup()
 
+message("✓ Trade metrics computed.")
+
 # ECI & PCI ---------------------------------------------------------------
 # Compute ECI & PCI separately for each year
 
@@ -285,6 +316,7 @@ head(cp_df_2022)
 cp_mat_list <- list()
 
 ## Loop through each year and create the matrices ####
+message("Creating M_cp matrices for each year...")
 for (year in baci_year1:baci_yearT) {
   # Create the matrix for the current year using the corresponding cp_df
   cp_mat <- get(paste0("cp_df_", year)) %>%
@@ -299,6 +331,7 @@ for (year in baci_year1:baci_yearT) {
   # Add the matrix to the list
   cp_mat_list[[year - (baci_year1 - 1)]] <- cp_mat
 } 
+message("✓ M_cp matrices created.")
 
 ## Check values
 # cp_mat_2017[1:8, 1:8]
@@ -306,6 +339,7 @@ for (year in baci_year1:baci_yearT) {
 # cp_mat_2022[1:8, 1:8]
 
 ## Compute ECI & PCI ####
+message("Computing complexity metrics...")
 for (year in baci_year1:baci_yearT) {
   # Create the complexity measures object for the current year
   compl_object <- complexity_measures(
@@ -316,6 +350,7 @@ for (year in baci_year1:baci_yearT) {
   # Assign the object to the corresponding name (compl_2007, compl_2008, etc.)
   assign(paste0("compl_", year), compl_object)
 }
+message("✓ Complexity metrics computed.")
 
 head(compl_2022$complexity_index_country)
 head(compl_2022$complexity_index_product)
@@ -324,9 +359,11 @@ head(compl_2022$complexity_index_product)
 # A data frame containing all the ECI values for all years
 
 # Initialize an empty data frame
-eci_df <- data.frame(year = numeric(0), 
-                     country_iso3 = character(0), 
-                     eci_c = numeric(0))
+eci_df <- data.frame(
+  year = numeric(0), 
+  country_iso3 = character(0), 
+  eci_c = numeric(0)
+)
 head(eci_df)
 
 ### Loop over all compl_YEAR objects and combine their values into one df
@@ -359,9 +396,11 @@ rm(eci_df)
 # A data frame containing all the PCI values for all years
 
 # Initialize an empty data frame
-pci_df <- data.frame(year = numeric(0), 
-                     prod_code = character(0), 
-                     pci_p = numeric(0))
+pci_df <- data.frame(
+  year = numeric(0), 
+  prod_code = character(0), 
+  pci_p = numeric(0)
+)
 head(pci_df)
 
 ### Loop over all compl_YEAR objects and combine their PCI values into one df
@@ -401,6 +440,7 @@ prox_years <- prox_year1:prox_yearT
 
 ### Loop through each year (over each cp_mat_yyyy object) and compute 
 # proximities
+message("Computing proximities...")
 for(year in prox_year1:prox_yearT) {
   # Construct the matrix name for the current year
   cp_mat_name <- paste("cp_mat", year, sep = "_")
@@ -419,7 +459,8 @@ for(year in prox_year1:prox_yearT) {
   
   # Remove the temporary proximity_current variable to free up memory
   rm(cp_mat_current, proximity_current)
-} 
+}
+message("✓ Proximities computed.")
 
 # Check objects that are created
 grep(pattern = "prox_\\d{4}", ls(), value = TRUE)
@@ -430,6 +471,7 @@ prox_2022$proximity_country[1:5, 1:5]
 # Compute distances_cp between countries and products 
 
 ### Loop through each year and compute distances
+message("Computing relatedness distances (= 1 - relatedness density_cp)...")
 for(year in prox_year1:prox_yearT) {
   # Construct the prox_yyyy variable name
   prox_var_name <- paste0("prox_", year)
@@ -454,6 +496,7 @@ for(year in prox_year1:prox_yearT) {
   # and assign the calculated dist_object to it
   assign(dist_var_name, dist_object)
 }
+message("✓ Relatedness distances computed.")
 
 # Check the distance matrices that were created
 grep(pattern = "dist_\\d{4}", ls(), value = TRUE)
@@ -495,8 +538,9 @@ dist_df <- dist_df %>%
 head(dist_df) 
 
 ### Merge dist_df with cp_df
-cp_df <- left_join(cp_df, dist_df, 
-                   by = c("year", "country_iso3", "prod_code"))
+cp_df <- left_join(
+  cp_df, dist_df, by = c("year", "country_iso3", "prod_code")
+)
 head(cp_df)
 dim(cp_df) 
 
@@ -510,6 +554,7 @@ cp_df <- cp_df %>%
   mutate(relatedness_cp = 1 - dist_cp) %>% 
   # Remove dist_cp to save memory
   select(-dist_cp)
+message("✓ Relatedness density computed.")
 
 # Complexity Outlook ------------------------------------------------------
 # Initialise empty dataframes
@@ -518,6 +563,7 @@ cog_df <- data.frame()
 
 # Compute the Complexity Outlook Index (coi_c) for each country and the 
 # Complexity Outlook Gain (cog_cp) for each country-product
+message("Computing outlook indices...")
 for (year in baci_year1:baci_yearT) {
   
   # Create the complexity outlook list object
@@ -555,6 +601,7 @@ for (year in baci_year1:baci_yearT) {
       select(year, country_iso3, prod_code, everything())
   )
 }
+message("✓ Outlook indices computed.")
 
 head(coi_df)
 head(cog_df)
@@ -577,8 +624,23 @@ rm(list = grep("prox_\\d{4}", ls(), value = TRUE))
 dim(cp_df)
 head(cp_df)
 
+# Export to .csv (you can export to .parquet or other formats if you want to 
+# reduce memory footprint)
+message("Exporting processed dataset to .csv...")
+PROCESSED_DATA_PATH <- file.path("data", "processed", "cp_df.csv")
 write.csv(
   cp_df, 
-  file = "data/processed/cp_df.csv", 
+  file = PROCESSED_DATA_PATH, 
   row.names = FALSE
 )
+message(glue("✓ Processed data exported to '{PROCESSED_DATA_PATH}'"))
+
+stop_time <- Sys.time()
+runtime <- difftime(stop_time, start_time, units = "mins")
+cat(sprintf(
+  "\n%s\n✓ All data processing completed in %.2f min [%s].\n%s\n",
+  strrep("-", 78),
+  as.numeric(runtime),
+  format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
+  strrep("-", 78)
+))
