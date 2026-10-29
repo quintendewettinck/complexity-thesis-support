@@ -58,4 +58,4 @@ data
 README.html
 
 # File to clear the environment
-clear_env.R
+clear_env.R*.Rproj
