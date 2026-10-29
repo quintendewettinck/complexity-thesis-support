@@ -37,9 +37,11 @@ This repository is structured as follows:
 
 ## Data Sources
 
-- CEPII BACI international trade data (HS07, 2007-2023)(https://www.cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37)
+- CEPII BACI international trade data (HS07, 2007-2023) (https://www.cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37)
 - UN HS product descriptions (https://unstats.un.org/unsd/classifications/Econ)
   - Download "All HS codes and descriptions" xlsx file for product descriptions for all HS digits
+- JLOP Industrial Policy Data (https://github.com/industrialpolicygroup/IndustrialPolicyData/blob/main/data/JLOP_2025.xlsx)
+  - Use this data to *support* your industrial policy analysis (this does not replace your analysis of government reports and documents)
 
 ## Citation
 
