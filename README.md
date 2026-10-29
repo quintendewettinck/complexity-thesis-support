@@ -1,6 +1,6 @@
 # Complexity Thesis Support
 
-A repository with example code for master's thesis students performing country-level complexity-relatedness analyses.
+This repository contains example code for master's thesis students performing complexity-relatedness analyses.
 
 Please refer to the document `thesis_instructions.pdf` on Toledo for general instructions.
 
@@ -18,27 +18,28 @@ Please refer to the document `thesis_instructions.pdf` on Toledo for general ins
     6. Export the country-product-year level dataset to `cp_df.csv`
 5. Create new script(s) for your analysis
     
-Note that the `data_processing.R` script serves as supporting material for the preprocessing of the data, and does not include all code required for the full analysis. 
+Note that the `data_processing.R` script serves as supporting material for the preprocessing of the data, and does not include *all* relevant code required for the full analysis. 
+
+## Project Structure
+
+This repository is structured as follows:
+
+``` bash
+.
+├── README.md              # this file
+├── data
+│   ├── raw                # raw data
+│   └── processed          # processed/clean data
+├── processing
+│   └── data_processing.R  # script that preprocesses all data for analysis
+└── analysis               # analysis scripts
+```
 
 ## Data Sources
 
 - CEPII BACI international trade data (HS07, 2007-2023)(https://www.cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37)
 - UN HS product descriptions (https://unstats.un.org/unsd/classifications/Econ)
   - Download "All HS codes and descriptions" xlsx file for product descriptions for all HS digits
-
-## Directory Structure
-
-``` text
-├── analysis
-│   └── README.txt
-├── complexity-thesis-support.Rproj
-├── data
-│   ├── data_processed
-│   └── data_raw
-├── processing
-│   └── data_processing.R
-└── README.md
-```
 
 ## Citation
 
@@ -64,7 +65,7 @@ De Wettinck, Q., De Bruyne, K., & Bam, W. (2025). *Economic Complexity: Promise 
 
 `BibTeX`:
 ```bibtex
-@misc{DeWettinck.etal2025,
+@misc{DeWettinck.etal2025a,
   type = {{{SSRN Scholarly Paper}}},
   title = {Economic {{Complexity}}: {{Promise}} and {{Potential}} for {{Sustainable Development Decision Support}}},
   shorttitle = {Economic {{Complexity}}},
@@ -79,3 +80,23 @@ De Wettinck, Q., De Bruyne, K., & Bam, W. (2025). *Economic Complexity: Promise 
   langid = {english}
 }
 ```
+
+and 
+
+De Wettinck, Q., De Bruyne, K., Bam, W., & Hidalgo, C. A. (2025). *Economic Complexity Alignment and Sustainable Development* (arXiv:2509.17919). arXiv. https://doi.org/10.48550/arXiv.2509.17919
+
+`BibTeX`:
+```bibtex
+@misc{DeWettinck.etal2025b,
+  title = {Economic {{Complexity Alignment}} and {{Sustainable Development}}},
+  author = {De Wettinck, Quinten and De Bruyne, Karolien and Bam, Wouter and Hidalgo, C{\'e}sar A.},
+  year = 2025,
+  month = sep,
+  number = {arXiv:2509.17919},
+  eprint = {2509.17919},
+  primaryclass = {econ},
+  publisher = {arXiv},
+  doi = {10.48550/arXiv.2509.17919},
+  urldate = {2025-09-23},
+  archiveprefix = {arXiv},
+}
