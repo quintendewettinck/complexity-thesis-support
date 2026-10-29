@@ -506,8 +506,8 @@ rm(dist_df)
 ## Density_cp -------------------------------------------------------------
 # Relatedness density = 1 - distance = "closeness"
 cp_df <- cp_df %>% 
-  # Compute relatedness density (dens_cp)
-  mutate(dens_cp = 1 - dist_cp) %>% 
+  # Compute relatedness density (relatedness_cp)
+  mutate(relatedness_cp = 1 - dist_cp) %>% 
   # Remove dist_cp to save memory
   select(-dist_cp)
 

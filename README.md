@@ -14,7 +14,7 @@ Please refer to the document `thesis_instructions.pdf` on Toledo for general ins
     2. Aggregate the trade flows to the specified number of digits (`HS_digits`); recommended number of digits is 4
     3. Add the country ISO3 and product HS codes and descriptions
     4. Filter the dataset on the selected country and product sample (removing small nodes)
-    5. Compute RCA_cp, M_cp, diversity_c, ubiquity_p, ECI_c, PCI_p, proximity_pp, and relatedness_cp (dens_cp)
+    5. Compute RCA_cp, M_cp, diversity_c, ubiquity_p, ECI_c, PCI_p, proximity_pp, and relatedness_cp
     6. Export the country-product-year level dataset to `cp_df.csv`
 5. Create new script(s) for your analysis
     
