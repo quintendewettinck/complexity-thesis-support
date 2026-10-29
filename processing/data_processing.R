@@ -14,7 +14,7 @@ library(here)
 
 # Config ------------------------------------------------------------------
 # Set the raw data path
-RAW_DATA_PATH <- here("data/data_raw")
+RAW_DATA_PATH <- here("data/raw")
 
 # Choose BACI and HS version, and number of digits
 baci_version <- "V202501"
@@ -580,6 +580,6 @@ head(cp_df)
 
 write.csv(
   cp_df, 
-  file = "data/data_processed/cp_df.csv", 
+  file = "data/processed/cp_df.csv", 
   row.names = FALSE
 )
